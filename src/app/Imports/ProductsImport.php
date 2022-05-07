@@ -3,12 +3,14 @@
 namespace App\Imports;
 
 use App\Models\Product;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Maatwebsite\Excel\Concerns\ToModel;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\WithCustomCsvSettings;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithUpserts;
 
-class ProductsImport implements ToModel, WithHeadingRow, WithCustomCsvSettings, WithUpserts
+class ProductsImport implements ToModel, WithHeadingRow, WithCustomCsvSettings, WithUpserts, ShouldQueue, WithChunkReading
 {
     public function getCsvSettings(): array
     {
@@ -16,6 +18,11 @@ class ProductsImport implements ToModel, WithHeadingRow, WithCustomCsvSettings, 
         return [
             'input_encoding' => 'UTF-8',
         ];
+    }
+
+    public function chunkSize(): int
+    {
+        return 1000;
     }
 
     /**
