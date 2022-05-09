@@ -18,6 +18,7 @@ class Product extends Model
 
     protected $fillable = [
         'id',
+        'file_id',
         'product_title',
         'product_description',
         'style',
@@ -56,4 +57,12 @@ class Product extends Model
         'pms_color',
         'gtin',
     ];
+
+    /**
+     * Get the associated file
+     */
+    public function file()
+    {
+        return $this->belongsTo(File::class);
+    }
 }

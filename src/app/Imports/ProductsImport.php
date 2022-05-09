@@ -2,19 +2,35 @@
 
 namespace App\Imports;
 
+use App\Models\File;
 use App\Models\Product;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\WithCustomCsvSettings;
+use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithUpserts;
+use Maatwebsite\Excel\Events\AfterImport;
+use Maatwebsite\Excel\Events\BeforeImport;
 
-class ProductsImport implements ToModel, WithHeadingRow, WithCustomCsvSettings, WithUpserts, ShouldQueue, WithChunkReading
+class ProductsImport implements
+    ToModel,
+    WithHeadingRow,
+    WithCustomCsvSettings,
+    WithUpserts,
+    ShouldQueue,
+    WithChunkReading,
+    WithEvents
 {
+    public $file;
+
+    public function __construct(File $file) {
+        $this->file = $file;
+    }
+
     public function getCsvSettings(): array
     {
-        # Define your custom import settings for only this class
         return [
             'input_encoding' => 'UTF-8',
         ];
@@ -40,8 +56,13 @@ class ProductsImport implements ToModel, WithHeadingRow, WithCustomCsvSettings, 
     */
     public function model(array $row)
     {
+        $file = File::where('id', $this->file->id)->first();
+        $file->status = 'processing';
+        $file->save();
+
         return new Product([
             'id' =>  utf8_encode($row['unique_key']),
+            'file_id' => $this->file->id,
             'product_title' => mb_convert_encoding($row['product_title'], 'UTF-8', 'UTF-8'),
             'product_description' => mb_convert_encoding($row['product_description'], 'UTF-8', 'UTF-8'),
             'style' => utf8_encode($row['style']),
@@ -83,5 +104,17 @@ class ProductsImport implements ToModel, WithHeadingRow, WithCustomCsvSettings, 
             'pms_color' => utf8_encode($row['pms_color']),
             'gtin' => utf8_encode($row['gtin']),
         ]);
+    }
+
+    public function registerEvents(): array
+    {
+        return [
+            AfterImport::class => function (AfterImport $event) {
+                $product = Product::orderBy('created_at', 'desc')->first();
+                $file = File::where('id', $product->file_id)->first();
+                $file->status = 'completed';
+                $file->save();
+            },
+        ];
     }
 }

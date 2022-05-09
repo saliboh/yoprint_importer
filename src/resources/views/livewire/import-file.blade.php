@@ -1,15 +1,8 @@
-<form wire:submit.prevent="submit" enctype="multipart/form-data">
-    <div>
-        @if(session()->has('message'))
-        <div class="alert alert-success">
-            {{ session('message') }}
-        </div>
-        @endif
-    </div>
-
+<form wire:submit.prevent="submit" enctype="multipart/form-data" class="padding-15 black round-5 form-inline">
     <div class="form-group">
-        <input type="file" class="form-control" wire:model="file">
+        <input type="file" class="form-control input-lg" wire:model="files" multiple >
+        <div class="form-group">
+            <button type="submit" class="btn btn-primary">Upload</button>
+        </div>
     </div>
-
-    <button type="submit" class="btn btn-primary">Upload</button>
 </form>
